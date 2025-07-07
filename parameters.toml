@@ -1,0 +1,38 @@
+[analysis]
+experiment = "h445"
+number = "5"
+beamtime = { start = "20XX/XX/XX XX:XX:XX", end = "202XX/XX/XX XX:XX:XX" }
+facility-information = { facility = "HIMAC", room = "Bio" }
+reactions = ["null"]
+
+[analysis.beam-information] 
+species = ["XX"]
+energy = "200 MeV/u"
+intensity = "500kcps"
+
+[analysis.environment]
+base-directory = "$ART_ANALYSIS_DIR"
+user = "$ARTEMIS_USER"
+analysis-directory = "$ARTEMIS_WORKDIR"
+
+[analysis.environment.input]
+base = "data"
+rootfig-csv = "data/python/csv"
+
+[analysis.environment.output]
+homepage = "$HOME/HTMLpub/analysis/h445-5"
+data = "data/python"
+figure = "figs/python"
+
+[data]
+base = "$BASE_DATA_PATH"
+
+[metis]
+db-path = "catminis/metis/data/h445-5_hv_monitor.db"
+ip-information = { 
+    "bld-caen" = "192.168.1.214:9000", 
+    "mini-caen0" = "192.168.1.214:9001", 
+    "mini-caen1" = "192.168.1.214:9002",
+    "mini-caen2" = "192.168.1.214:9003",
+    "mini-iseg" = "192.168.1.214:9004"
+}

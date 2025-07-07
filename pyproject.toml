@@ -1,0 +1,21 @@
+[project]
+name = "h445-5-python-ana"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "FumiHubCNS", email = "fendo@cns.s.u-tokyo.ac.jp" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "h445lib2",
+    "pandas>=2.3.0",
+    "plotly>=6.2.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv.sources]
+h445lib2 = { git = "https://github.com/FumiHubCNS/h445-2-python-analysis.git" }
