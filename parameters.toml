@@ -29,10 +29,10 @@ base = "$BASE_DATA_PATH"
 
 [metis]
 db-path = "catminis/metis/data/h445-5_hv_monitor.db"
-ip-information = { 
-    "bld-caen" = "192.168.1.214:9000", 
-    "mini-caen0" = "192.168.1.214:9001", 
-    "mini-caen1" = "192.168.1.214:9002",
-    "mini-caen2" = "192.168.1.214:9003",
-    "mini-iseg" = "192.168.1.214:9004"
-}
+
+[metis.ip-information]
+bld-caen = "192.168.1.214:9000"
+mini-caen0 = "192.168.1.214:9001" 
+mini-caen1 = "192.168.1.214:9002"
+mini-caen2 = "192.168.1.214:9003"
+mini-iseg = "192.168.1.214:9004"

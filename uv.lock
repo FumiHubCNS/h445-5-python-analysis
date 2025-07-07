@@ -92,7 +92,7 @@ requires-dist = [
 [[package]]
 name = "h445lib2"
 version = "0.1.0"
-source = { git = "https://github.com/FumiHubCNS/h445-2-python-analysis.git#ff4b930c7be53a3651d93edbfe3d2a2fba6c804c" }
+source = { git = "https://github.com/FumiHubCNS/h445-2-python-analysis.git#c1904d717286c68bc673242373553368d34433ce" }
 dependencies = [
     { name = "catmlib" },
 ]

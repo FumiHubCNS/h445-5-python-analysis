@@ -23,6 +23,8 @@ JST = timezone(timedelta(hours=9))
 def load_db(database_path, ip_filter, module_type):
     if module_type == 'caen':
         return load_caen(database_path, ip_filter)
+    elif module_type == "iseg":
+        return load_iseg(database_path, ip_filter)
 
 def load_caen(database_path, ip_filter):
 
@@ -69,9 +71,48 @@ def load_caen(database_path, ip_filter):
 
     return df
 
-def plot_cean_log(df, ip_filter, module_type):
+def load_iseg(database_path, ip_filter):
+    conn = sqlite3.connect(database_path)
+    cursor = conn.cursor()
 
-    dfs = [df[df["CH"] == ch] for ch in range(4)]
+    query = """
+    SELECT timestamp, json_data FROM monitor_logs
+    WHERE ip_address = ?
+    ORDER BY timestamp ASC
+    """
+    cursor.execute(query, (ip_filter,))
+    rows = cursor.fetchall()
+
+    records = []
+
+    for timestamp, json_data in rows:
+        try:
+            data = json.loads(json_data)
+            VMON = list(map(float, data.get("Status.voltageMeasure", [])))
+            IMON = list(map(float, data.get("Status.currentMeasure", [])))
+            
+            min_len = min(len(VMON), len(IMON))
+            for i in range(min_len):
+                records.append({
+                    "timestamp_utc": datetime.fromtimestamp(timestamp, tz=timezone.utc),
+                    "timestamp_jst": datetime.fromtimestamp(timestamp, tz=JST),
+                    "CH": i,
+                    "VMON": VMON[i],
+                    "IMON": IMON[i]
+                })
+
+        except json.JSONDecodeError:
+            print(f"Invalid JSON data at timestamp {timestamp}")
+
+    df = pd.DataFrame(records)
+
+    conn.close()
+
+    return df
+
+def plot_cean_log(df, ip_filter, module_type, reduce_factor=3, max_channel_number=4):
+
+    dfs = [df[df["CH"] == ch] for ch in range(max_channel_number)]
 
     fig = make_subplots(
         rows=2, cols=1,
@@ -80,22 +121,24 @@ def plot_cean_log(df, ip_filter, module_type):
     )
 
     for i, dfi in enumerate(dfs):
+        dfi_reduced = dfi.iloc[::reduce_factor]
         fig.add_trace(
             go.Scatter(
                 x=dfi["timestamp_jst"],
                 y=dfi["VMON"],
-                mode="lines+markers",
+                mode="lines",
                 name=f"VMON ch{i}"
             ),
             row=1, col=1
         )
 
     for i, dfi in enumerate(dfs):
+        dfi_reduced = dfi.iloc[::reduce_factor]
         fig.add_trace(
             go.Scatter(
                 x=dfi["timestamp_jst"],
                 y=dfi["IMON"],
-                mode="lines+markers",
+                mode="lines",
                 name=f"IMON ch{i}"
             ),
             row=2, col=1
@@ -115,40 +158,38 @@ def plot_cean_log(df, ip_filter, module_type):
 
     fig.show()
 
-def check_log(database_path, ip_filter, module_type):
+def check_log(database_path, ip_filter, module_type, reduce_factor):
 
     df = load_db(database_path, ip_filter, module_type)
     df["timestamp_jst"] = pd.to_datetime(df["timestamp_jst"])
 
     if module_type == 'caen':
-        plot_cean_log(df, ip_filter, module_type)
+        plot_cean_log(df, ip_filter, module_type, reduce_factor, 4)
+    elif module_type == 'iseg':
+        plot_cean_log(df, ip_filter, module_type, reduce_factor, 6)
 
 
 def main():
-
     parameters_path = this_file_path / '../../../parameters.toml'
-    print(parameters_path)
-
-    config, base_path, homepage_path = h445util2.load_parameters_toml(parameters_path)
-    print(config)
+    config= h445util2.load_parameters_toml(parameters_path)
 
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--input", help="path of database file", type=str, default="")
     parser.add_argument("-f", "--filter", help="filter information", type=str, default="mini-caen0")
     parser.add_argument("-t", "--type", help="module type", type=str, default="caen")
+    parser.add_argument("-r", "--reduce-factor", help="reduce factor for ploting", type=int, default=3)
 
     args = parser.parse_args()
 
     database_path: str = args.input
     ip_filter: str = config["metis"]["ip-information"][args.filter]
     module_type: str = args.type
+    reduce_factor: int = args.reduce_factor
 
-    input_with_environment_variables = f"{config["data"]["base"]}/{database_path}" if database_path != "" else f"{config["data"]["base"]}/{config["metis"]["db-path"]}"
+    input_with_environment_variables = f"{config["data"]["base"]}/{config["metis"]["db-path"]}" if database_path == "" else database_path
     input_db_path = catutil.dataforming.expand_environment_variables(input_with_environment_variables)
 
-    print(input_db_path)
-
-    # check_log(input_db_path, ip_filter, module_type)
+    check_log(input_db_path, ip_filter, module_type, reduce_factor)
 
 if __name__ == "__main__":
     main()
